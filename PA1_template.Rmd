@@ -1,16 +1,101 @@
-# Reproducible Research: Peer Assessment 1
-
+Reproducible Research: Peer Assessment 1 (bbakerharvey)
+=======================================================
 
 ## Loading and preprocessing the data
+First we have to load the data.  Since it is presented as a 
+Zip (archive) file format, it must be unzipped, then loaded
+into the working data.frame in R.  We plan to use data.table
+funcitons, so convert to data.table format, too.
 
+```{r}
+library("data.table")
+unzip("activity.zip")
+stepdata <- data.table(read.table("activity.csv",sep=",",header=TRUE))
+str(stepdata)
+```
+The raw data has been loaded into the data.frame stepdata.
 
+Since we know we have NA values in the dataset, first let's look
+at exploring the data with the NA values removed.
+
+```{r}
+stripna=stepdata[!is.na(stepdata$steps),]
+str(stripna)
+```
+## What is daily total number of steps taken?
+
+Using the abbreviated dataset, lets look at the total steps
+reported for each day.  In table form this is:
+
+```{r}
+library("plyr")
+withdaily <- ddply(stripna,~date,summarise, dailysteps=sum(steps))
+str(withdaily)
+withdaily
+```
+
+Let's view this as a histogram:
+```{r}
+hist(withdaily$dailysteps,xlab="steps",
+     main="Distribution of Daily Step Counts", col="steelblue")
+```
+
+Most days seem to be 10,000 to 15,000 steps.
 
 ## What is mean total number of steps taken per day?
 
+To see more about daily steps, let's compute mean and median
+of the daily step counts
+
+```{r}
+dailymean=mean(withdaily$dailysteps)
+dailymedian=median(withdaily$dailysteps)
+
+cat(sprintf("mean number of steps is %f and median is %f\n",
+            dailymean,dailymedian))
+
+```
+
+This is an interesting result because each day includes many 
+periods with zero activity, that is no steps taken, so the 
+median (middle observation) is in fact zero for all days.
+
+Let's just see how many zero activity observations there are
+each day.
+
+```{r}
+ddply(stripna,~date,summarise, meansteps=mean(steps,na.rm=TRUE),
+      mediansteps=median(steps),obscount=length(steps),
+      zerocount=sum(steps==0))
+```
 
 
 ## What is the average daily activity pattern?
 
+Consider the average activity pattern for different times during the day.  
+
+```{r}
+dailypattern <- ddply(stripna,~interval,summarise, 
+                      periodsteps=mean(steps))
+str(dailypattern)
+```
+So let's look at this as a time series plot:
+
+```{r}
+plot(dailypattern$interval,dailypattern$periodsteps,
+     xlab="Interval",ylab="Average Steps",
+     type="l")
+```
+
+In the graph, there appears to be a peak value.
+
+```{r}
+highest = max(dailypattern$periodsteps)
+which = dailypattern$interval[dailypattern$periodsteps==highest]
+
+cat(sprintf("peak value of %f is found in interval %5.0f\n",
+            highest,which))
+```
 
 
 ## Imputing missing values
