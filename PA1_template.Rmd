@@ -10,7 +10,8 @@ funcitons, so convert to data.table format, too.
 ```{r}
 library("data.table")
 unzip("activity.zip")
-stepdata <- data.table(read.table("activity.csv",sep=",",header=TRUE))
+stepdata <- data.table(read.table("activity.csv",sep=",",
+                                  header=TRUE))
 str(stepdata)
 ```
 The raw data has been loaded into the data.frame stepdata.
@@ -56,19 +57,6 @@ cat(sprintf("mean number of steps is %f and median is %f\n",
 
 ```
 
-This is an interesting result because each day includes many 
-periods with zero activity, that is no steps taken, so the 
-median (middle observation) is in fact zero for all days.
-
-Let's just see how many zero activity observations there are
-each day.
-
-```{r}
-ddply(stripna,~date,summarise, meansteps=mean(steps,na.rm=TRUE),
-      mediansteps=median(steps),obscount=length(steps),
-      zerocount=sum(steps==0))
-```
-
 
 ## What is the average daily activity pattern?
 
@@ -100,6 +88,90 @@ cat(sprintf("peak value of %f is found in interval %5.0f\n",
 
 ## Imputing missing values
 
+We know our data set had some missing values, which we have
+omitted from the analysis until now.  Now let's consider
+filling in those blank observations as we consider looking
+at weekly patterns.  For the analysis we will use a simple
+strategy of replacing the NA with an average number of
+steps for the missing interval.  Call this processed step count
+procsteps.
+
+```{r}
+avgvals<- dailypattern$periodsteps
+str(avgvals)
+avgvals
+stepdata$isna <- is.na(stepdata$steps)
+stepdata$procsteps <- 0.0 + stepdata$steps
+loopmax <- length(stepdata$date)
+print(loopmax)
+for (i in 1:loopmax) {
+        if (stepdata[i]$isna) {
+                stepdata[i]$procsteps <- 
+                        dailymean / ( 2400.0 / 5.0)
+                }
+        }
+str(stepdata)
+
+```
+
+### For this new imputed dataset, consider the daily activity
+```{r}
+library("plyr")
+procdaily <- ddply(stepdata,~date,summarise,
+                   dailyprocsteps=sum(procsteps))
+str(procdaily)
+procdaily
+```
+
+To see more about daily steps, let's compute mean and median
+of the imputed daily step counts
+
+```{r}
+procmean=mean(procdaily$dailyprocsteps)
+procmedian=median(procdaily$dailyprocsteps)
+
+cat(sprintf("For this proc dataset: mean number of steps is %f and median is %f\n",
+            procmean,procmedian))
+
+```
+
+This can be seen as a histogram:
+```{r}
+hist(procdaily$dailyprocsteps,xlab="procsteps",
+     main="Distribution of Daily Step Counts (imputed)", 
+     col="pink")
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+vsat <- weekdays(as.Date(stepdata$date)) == "Saturday"
+vsun <- weekdays(as.Date(stepdata$date)) == "Sunday"
+stepdata$iswe <- vsat | vsun
+sum(stepdata$iswe)
+```
+Compute the weekend and weekday patterns
+```{r}
+weekendpattern <- ddply(stepdata[stepdata$iswe==TRUE],~interval
+        ,summarise, periodsteps=mean(procsteps))
+str(weekendpattern)
+
+weekdaypattern <- ddply(stepdata[stepdata$iswe==FALSE],~interval
+        ,summarise, periodsteps=mean(procsteps))
+str(weekdaypattern)
+```
+Plot the weekend and weekday patterns
+```{r}
+par(mfcol=c(2,1))
+
+plot(weekendpattern$interval,weekendpattern$periodsteps,
+     xlab="Interval",ylab="Average Steps", main="Weekend",
+     type="l")
+
+plot(weekdaypattern$interval,weekdaypattern$periodsteps,
+     xlab="Interval",ylab="Average Steps", main="Weekday",
+     type="l")
+
+```   
+     
