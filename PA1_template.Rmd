@@ -174,4 +174,25 @@ plot(weekdaypattern$interval,weekdaypattern$periodsteps,
      type="l")
 
 ```   
+  
+  And lastly, let's do the same thing but with a nice panel plot. First collect the data.
+  
+  ```{r}
+  weekendpattern$day <- "weekend"
+  weekdaypattern$day <- "weekday"
+  compositedata <- merge(weekendpattern,weekdaypattern,all=TRUE)
+  str(weekendpattern)
+  str(weekdaypattern)
+  str(compositedata)
+  ```
+  
+  So we can use this data tp make the panel style plot.
+  
+  ```{r}
+  library(lattice)
+  xyplot(periodsteps ~ interval | day , compositedata, type="l",
+        layout=c(1,2), ylab="Number of Steps")
      
+  ```
+
+This is the end of the file.  Thanks for listening.

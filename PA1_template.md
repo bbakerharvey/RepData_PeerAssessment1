@@ -457,4 +457,55 @@ plot(weekdaypattern$interval,weekdaypattern$periodsteps,
 ```
 
 ![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
-     
+  
+  And lastly, let's do the same thing but with a nice panel plot. First collect the data.
+  
+  
+  ```r
+  weekendpattern$day <- "weekend"
+  weekdaypattern$day <- "weekday"
+  compositedata <- merge(weekendpattern,weekdaypattern,all=TRUE)
+  str(weekendpattern)
+  ```
+  
+  ```
+  ## 'data.frame':	288 obs. of  3 variables:
+  ##  $ interval   : int  0 5 10 15 20 25 30 35 40 45 ...
+  ##  $ periodsteps: num  2.8 2.8 2.8 2.8 2.8 ...
+  ##  $ day        : chr  "weekend" "weekend" "weekend" "weekend" ...
+  ```
+  
+  ```r
+  str(weekdaypattern)
+  ```
+  
+  ```
+  ## 'data.frame':	288 obs. of  3 variables:
+  ##  $ interval   : int  0 5 10 15 20 25 30 35 40 45 ...
+  ##  $ periodsteps: num  5.01 3.39 3.15 3.17 3.08 ...
+  ##  $ day        : chr  "weekday" "weekday" "weekday" "weekday" ...
+  ```
+  
+  ```r
+  str(compositedata)
+  ```
+  
+  ```
+  ## 'data.frame':	576 obs. of  3 variables:
+  ##  $ interval   : int  0 0 5 5 10 10 15 15 20 20 ...
+  ##  $ periodsteps: num  2.8 5.01 2.8 3.39 2.8 ...
+  ##  $ day        : chr  "weekend" "weekday" "weekend" "weekday" ...
+  ```
+  
+  So we can use this data tp make the panel style plot.
+  
+  
+  ```r
+  library(lattice)
+  xyplot(periodsteps ~ interval | day , compositedata, type="l",
+        layout=c(1,2), ylab="Number of Steps")
+  ```
+  
+  ![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+
+This is the end of the file.  Thanks for listening.
